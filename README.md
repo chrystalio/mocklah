@@ -13,13 +13,19 @@ A PDF is a text file with a fixed structure. MockLah builds one in four steps:
 1. Estimate how many pages fit the target.
 2. Build the document and measure its exact byte length.
 3. Adjust the page count to the largest number that still fits.
-4. Pad the last content stream with whitespace to close the gap, then recompute
-   the cross-reference table.
+4. Pad with whitespace to close the gap — into the last content stream, and any
+   final byte after `startxref` — then recompute the cross-reference table.
 
-Whitespace between PDF operators is ignored by readers, so it is invisible and
-exactly one byte each. The file is assembled as raw bytes (`Uint8Array`),
-uncompressed, ASCII only, using the standard 14 fonts (Helvetica). No dependency
-is added to the output, everything runs client-side, and nothing is uploaded.
+Whitespace is ignored by readers, so it is invisible and exactly one byte each.
+The second padding spot matters: padding *inside* a content stream can only reach
+file sizes up to the point where its `/Length` field gains a digit, and it skips
+exactly one size at each power of ten (553 bytes, for instance, is unreachable
+that way). The byte after `startxref` has no such problem, because nothing
+numeric follows it, so the file lands on the exact size every time.
+
+The document is assembled as raw bytes (`Uint8Array`), uncompressed, ASCII only,
+using the standard 14 fonts (Helvetica). No dependency is added to the output,
+everything runs client-side, and nothing is uploaded.
 
 ## Supported range
 
@@ -31,8 +37,9 @@ is added to the output, everything runs client-side, and nothing is uploaded.
 
 Early MVP, built in test-driven steps.
 
-- Done: exact size parsing and formatting (`lib/size.ts`).
-- Next: the PDF engine (`lib/pdf/`), the UI, the download path.
+- Done: exact size parsing and formatting (`lib/size.ts`); the PDF engine
+  (`lib/pdf/`) — a valid, openable PDF that lands on the exact byte count.
+- Next: the UI, the download path.
 
 ## Getting started
 
@@ -50,7 +57,7 @@ bun run lint
 app/                Next.js App Router (single route)
 components/         UI (GeneratorApp, SizeInput, ...)
 lib/size.ts         parse and format byte sizes
-lib/pdf/            PDF engine (content, objects, document, generate)
+lib/pdf/            PDF engine (content, document, generate)
 ```
 
 
