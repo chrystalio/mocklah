@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MockLah
 
-## Getting Started
+Generate a real PDF file of an exact byte size, entirely in your browser.
 
-First, run the development server:
+Type a size, click generate, and MockLah hands you a PDF that is exactly that many
+bytes. Not approximately. That is the whole product: if it cannot hit the number
+exactly, it refuses rather than approximating.
+
+## How it works
+
+A PDF is a text file with a fixed structure. MockLah builds one in four steps:
+
+1. Estimate how many pages fit the target.
+2. Build the document and measure its exact byte length.
+3. Adjust the page count to the largest number that still fits.
+4. Pad the last content stream with whitespace to close the gap, then recompute
+   the cross-reference table.
+
+Whitespace between PDF operators is ignored by readers, so it is invisible and
+exactly one byte each. The file is assembled as raw bytes (`Uint8Array`),
+uncompressed, ASCII only, using the standard 14 fonts (Helvetica). No dependency
+is added to the output, everything runs client-side, and nothing is uploaded.
+
+## Supported range
+
+- Units: `B`, `KB`, `MB`, `GB` (decimal: 1 KB = 1,000 bytes).
+- Targets: 1 KB to 100 MB. Outside that range MockLah refuses with an explanation.
+- Paper: A4 (595 x 842 pt).
+
+## Status
+
+Early MVP, built in test-driven steps.
+
+- Done: exact size parsing and formatting (`lib/size.ts`).
+- Next: the PDF engine (`lib/pdf/`), the UI, the download path.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install
+bun run dev      # http://localhost:3000
+bun run test     # Vitest (note: `bun test` runs Bun's runner, not Vitest)
+bun run build
+bun run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project layout
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+app/                Next.js App Router (single route)
+components/         UI (GeneratorApp, SizeInput, ...)
+lib/size.ts         parse and format byte sizes
+lib/pdf/            PDF engine (content, objects, document, generate)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Built with Next.js (App Router).
